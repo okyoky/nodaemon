@@ -2,7 +2,9 @@ var express = require('express');
 var app = express();
 
 var http = require('http');
+
 var debug = require('debug')('nodaemon: ' + appName);
+
 app.set('port', config.port);
 
 var server = http.createServer(app);
@@ -35,55 +37,62 @@ function onListening() {
 		: 'port ' + addr.port;
 	debug('Listening on ' + bind);
 }
-
 server.on('error', onError);
 server.on('listening', onListening);
 
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
 var path = require('path');
 
-/*						uncomment to session store
-//          req.session is a session data object
-var session = require('express-session');
-var redis = require('connect-redis')(session);
-app.use(session({
-	store: new redis({
-		host:'redis',
-		prefix:'nodaemon_' + appName
-	}),
-	secret: appName + 'Pass'
-}));
-//*/
+if(config.use.redisSession) {
+	var session = require('express-session');
+	var redis = require('connect-redis')(session);
+	app.use(session({
+		store: new redis({
+			host: config.use.redisSessionHost,
+			prefix: 'nodaemon_' + appName
+		}),
+		secret: appName + 'Pass'
+	}));
+}
 
 app.set('views', [path.join(config.projectname, 'views'), path.join('.', '_views')]);
-app.locals.pretty = true;
+if(config.env == 'development') app.locals.pretty = true;
 
-app.set('view engine', 'pug');
+if(config.use.pug) {
+	app.set('view engine', 'pug');
+}
 app.set('strict routing', false);
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser());
+if(config.use.bodyParser) {
+	var bodyParser = require('body-parser');
+	app.use(bodyParser.json());
+	app.use(bodyParser.urlencoded({extended: true}));
+}
+
+if(config.use.cookieParser) {
+	var cookieParser = require('cookie-parser');
+	app.use(cookieParser());
+}
+
 app.use(express.static(path.join(config.projectname, 'public')));
 app.use(express.static(path.join('_public')));
 
-/*						uncomment to use less
-var lessMiddleware = require('less-middleware');
-app.use(lessMiddleware(path.join(config.projectname, 'public')));
-app.use(lessMiddleware(path.join('_public')));
-//*/
+if(config.use.less) {
+	console.log('less');
+	var lessMiddleware = require('less-middleware');
+	app.use(lessMiddleware(path.join(config.projectname, 'public')));
+	app.use(lessMiddleware(path.join('_public')));
+}
 
 
-/*						uncomment to use stylus
-var stylus = require('express-stylus');
-var nib = require('nib');
-app.use(stylus({
-	src: path.join(config.projectname, 'public'),
-	use: [nib()],
-	import: ['nib']
-}));
-//*/
+if(config.use.stylus) {
+	var stylus = require('express-stylus');
+	var nib = require('nib');
+	app.use(stylus({
+		src: path.join(config.projectname, 'public'),
+		use: [nib()],
+		import: ['nib']
+	}));
+}
 
 if(config.domain != undefined) {
 	server = app.listen(config.port, config.domain);

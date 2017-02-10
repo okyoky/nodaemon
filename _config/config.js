@@ -31,6 +31,13 @@ var env_config = {
 
 var appconfig = {
 	sample: {
+		use: {
+			less: 0,
+			stylus: 1,
+			pug: 1,
+			redisSession: 0,
+			redisSessionHost: 'redis'
+		},
 		domain: 'localhost',
 		port: 8000,
 		//daemon_period: 5,      //      seconds
