@@ -42,16 +42,9 @@ server.on('listening', onListening);
 
 var path = require('path');
 
-if(config.use.redisSession) {
-	var session = require('express-session');
-	var redis = require('connect-redis')(session);
-	app.use(session({
-		store: new redis({
-			host: config.use.redisSessionHost,
-			prefix: 'nodaemon_' + appName
-		}),
-		secret: appName + 'Pass'
-	}));
+if(config.use.json2xls) {
+	json2xls = require('json2xls');
+	app.use(json2xls.middleware);
 }
 
 app.set('views', [path.join(config.projectname, 'views'), path.join('.', '_views')]);
@@ -73,11 +66,21 @@ if(config.use.cookieParser) {
 	app.use(cookieParser());
 }
 
-app.use(express.static(path.join(config.projectname, 'public')));
-app.use(express.static(path.join('_public')));
+if(config.use.redisSession) {
+	var session = require('express-session');
+	var redis = require('connect-redis')(session);
+	app.use(session({
+		store: new redis({
+			host: config.use.redisSessionHost,
+			prefix: config.use.sessionPrefix
+		}),
+		secret: config.use.sessionSecret,
+		saveUninitialized: false,
+		resave: false
+	}));
+}
 
 if(config.use.less) {
-	console.log('less');
 	var lessMiddleware = require('less-middleware');
 	app.use(lessMiddleware(path.join(config.projectname, 'public')));
 	app.use(lessMiddleware(path.join('_public')));
@@ -86,12 +89,16 @@ if(config.use.less) {
 
 if(config.use.stylus) {
 	var stylus = require('express-stylus');
-	var nib = require('nib');
-	app.use(stylus({
+	var stylOpts = {
 		src: path.join(config.projectname, 'public'),
-		use: [nib()],
-		import: ['nib']
-	}));
+		force: env == 'development'
+	};
+	if(config.use.stylus_nib) {
+		var nib = require('nib');
+		stylOpts.use = [nib()];
+		stylOpts.import = ['nib'];
+	}
+	app.use(stylus(stylOpts));
 }
 
 if(config.domain != undefined) {
@@ -101,5 +108,8 @@ if(config.domain != undefined) {
 	server = app.listen(config.port);
 	console.log(_N + appName + ' now listening at http://' + server.address().address + ':' + server.address().port + _N);
 }
+
+app.use(express.static(path.join(config.projectname, 'public')));
+app.use(express.static(path.join('_public')));
 
 module.exports = app;

@@ -34,9 +34,15 @@ var appconfig = {
 		use: {
 			less: 0,
 			stylus: 1,
+			stylus_nib: 1,
 			pug: 1,
 			redisSession: 0,
-			redisSessionHost: 'redis'
+			redisSessionHost: 'redis',
+			sessionPrefix: 'nodaemon',
+			sessionSecret: 'nodaemonpass',
+			bodyParser: true,
+			cookieParser: true,
+			json2xls: false
 		},
 		domain: 'localhost',
 		port: 8000,
